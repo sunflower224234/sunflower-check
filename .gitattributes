@@ -1,0 +1,8 @@
+# 统一以 LF 存放在仓库中，避免跨平台协作时产生整文件级别的换行差异
+* text=auto eol=lf
+
+# 二进制文件不做换行转换
+*.png binary
+*.jpg binary
+*.ico binary
+*.db binary
