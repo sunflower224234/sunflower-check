@@ -1,0 +1,19 @@
+# Python 运行时产物
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 数据库文件（运行时生成，不入库）
+*.db
+*.sqlite3
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
