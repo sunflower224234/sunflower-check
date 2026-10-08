@@ -75,8 +75,9 @@ def check_in(student_id: str, name: str, moment: datetime | None = None) -> dict
 
     if not student_id or not name:
         return {"ok": False, "reason": "学号和姓名都不能为空"}
-    if not student_id.isdigit():
-        return {"ok": False, "reason": "学号只能是数字"}
+    # 必须同时校验 isascii：str.isdigit() 对全角数字「１」和上标「²」也返回 True
+    if not (student_id.isascii() and student_id.isdigit()):
+        return {"ok": False, "reason": "学号只能由 0-9 组成"}
     if not STUDENT_ID_MIN_LEN <= len(student_id) <= STUDENT_ID_MAX_LEN:
         return {
             "ok": False,

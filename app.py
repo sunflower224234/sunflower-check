@@ -24,6 +24,8 @@ from urllib.parse import urlparse
 import db
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# 归一化后的项目根目录，供路径归属判断使用（Windows 下大小写不敏感）
+BASE_DIR_REAL = os.path.normcase(os.path.realpath(BASE_DIR))
 HOST = os.environ.get("CHECKIN_HOST", "127.0.0.1")
 PORT = int(os.environ.get("CHECKIN_PORT", "8000"))
 
@@ -55,8 +57,16 @@ class CheckinHandler(BaseHTTPRequestHandler):
 
     def _send_file(self, relative_path: str) -> None:
         """发送项目目录内的文件；拒绝目录穿越。"""
-        target = os.path.normpath(os.path.join(BASE_DIR, relative_path))
-        if not target.startswith(BASE_DIR) or not os.path.isfile(target):
+        target = os.path.normcase(os.path.realpath(os.path.join(BASE_DIR, relative_path)))
+
+        # 用 commonpath 判断归属。不能用 str.startswith：
+        # 那会把「checkin-system-backup」这类同前缀的兄弟目录误判为项目内文件。
+        try:
+            inside = os.path.commonpath([BASE_DIR_REAL, target]) == BASE_DIR_REAL
+        except ValueError:  # 不同盘符，commonpath 会抛异常
+            inside = False
+
+        if not inside or not os.path.isfile(target):
             self._send_json(404, {"ok": False, "reason": "资源不存在"})
             return
 
