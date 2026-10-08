@@ -121,6 +121,16 @@ def list_records(limit: int = 100) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def all_records() -> list[dict]:
+    """按签到时间正序返回全部记录，供导出使用。"""
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT id, student_id, name, checkin_at, status FROM checkin "
+            "ORDER BY checkin_at ASC, id ASC"
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def stats(today: str | None = None) -> dict:
     """返回指定日期（默认今天）的签到统计。"""
     today = today or datetime.now().strftime("%Y-%m-%d")

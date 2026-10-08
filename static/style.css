@@ -95,16 +95,23 @@ button {
 button:hover { background: var(--brand-dark); }
 button:disabled { background: #9ca3af; cursor: not-allowed; }
 
-button.ghost {
+button.ghost,
+a.ghost {
   width: auto;
+  display: inline-block;
   padding: 3px 12px;
   font-size: 12px;
   background: transparent;
   color: var(--brand);
   border: 1px solid var(--line);
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s;
 }
 
-button.ghost:hover { background: #eff6ff; }
+button.ghost:hover,
+a.ghost:hover { background: #eff6ff; }
 
 .message { min-height: 22px; margin: 14px 0 0; font-size: 14px; }
 .message.ok { color: var(--ok); }

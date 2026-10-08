@@ -39,7 +39,10 @@
         <div class="stat"><span class="num" id="stat-late">0</span><span class="label">迟到</span></div>
       </div>
 
-      <h2>签到记录 <button type="button" id="refresh-btn" class="ghost">刷新</button></h2>
+      <h2>签到记录
+        <button type="button" id="refresh-btn" class="ghost">刷新</button>
+        <a id="export-btn" class="ghost" href="/api/export.csv" download="签到记录.csv">导出 CSV</a>
+      </h2>
       <div class="table-wrap">
         <table id="records-table">
           <thead>

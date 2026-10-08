@@ -16,10 +16,12 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import db
 
@@ -35,6 +37,25 @@ CONTENT_TYPES = {
     ".js": "application/javascript; charset=utf-8",
     ".json": "application/json; charset=utf-8",
 }
+
+
+def records_as_csv(records: list[dict]) -> bytes:
+    """把签到记录序列化为 CSV 字节流。
+
+    带 UTF-8 BOM，Excel 直接双击打开时中文不会乱码。
+    """
+    buffer = io.StringIO(newline="")
+    writer = csv.writer(buffer)
+    writer.writerow(["序号", "学号", "姓名", "签到时间", "状态"])
+    for index, record in enumerate(records, start=1):
+        writer.writerow([
+            index,
+            record["student_id"],
+            record["name"],
+            record["checkin_at"],
+            record["status"],
+        ])
+    return "\ufeff".encode("utf-8") + buffer.getvalue().encode("utf-8")
 
 
 class CheckinHandler(BaseHTTPRequestHandler):
@@ -54,6 +75,24 @@ class CheckinHandler(BaseHTTPRequestHandler):
     def _send_json(self, status: int, payload: dict) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self._send(status, body, "application/json; charset=utf-8")
+
+    def _send_csv(self, filename: str, body: bytes) -> None:
+        # HTTP 头只能是 latin-1 字符，中文文件名直接写进 Content-Disposition
+        # 会抛 UnicodeEncodeError 并中断响应。这里按 RFC 5987 做百分号编码，
+        # 同时保留一个 ASCII 文件名给不支持 filename* 的老客户端兜底。
+        ascii_name = "checkin-records.csv"
+        utf8_name = quote(filename, safe="")
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/csv; charset=utf-8")
+        self.send_header(
+            "Content-Disposition",
+            f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{utf8_name}",
+        )
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
 
     def _send_file(self, relative_path: str) -> None:
         """发送项目目录内的文件；拒绝目录穿越。"""
@@ -103,6 +142,8 @@ class CheckinHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"ok": True, "records": db.list_records()})
         elif path == "/api/stats":
             self._send_json(200, {"ok": True, **db.stats()})
+        elif path == "/api/export.csv":
+            self._send_csv("签到记录.csv", records_as_csv(db.all_records()))
         else:
             self._send_json(404, {"ok": False, "reason": "接口不存在"})
 
